@@ -1,0 +1,2 @@
+# Put this file in: terraform/some_environment/pre-init/.gitignore
+!*.tfstate
