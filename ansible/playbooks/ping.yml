@@ -1,0 +1,4 @@
+- name: Debug
+  hosts: "{{ variable_host | default('[]') }}"
+  tasks:
+    - ping:
