@@ -1,0 +1,69 @@
+[
+  {
+    "name": "es-node",
+    "image": "${docker_image_url_es}",
+    "memory": 1024,
+    "cpu": 1024,
+    "resourceRequirements": null,
+    "essential": true,
+    "portMappings": [
+      {
+        "hostPort": 9200,
+        "containerPort": 9200,
+        "protocol": "tcp"
+      },
+      {
+        "hostPort": 9300,
+        "containerPort": 9300,
+        "protocol": "tcp"
+      }
+    ],
+    "environment": [
+      {
+        "name": "ES_JAVA_OPTS",
+        "value": "-Xms512m -Xmx512m"
+      },
+      {
+        "name": "REGION",
+        "value": "${region}"
+      }
+    ],
+    "environmentFiles": [],
+    "secrets": null,
+    "mountPoints": [
+      {
+        "sourceVolume": "esdata",
+        "containerPath": "/usr/share/elasticsearch/data/",
+        "readOnly": false
+      },
+      {
+        "sourceVolume": "esconfig",
+        "containerPath": "/usr/share/elasticsearch/config/elasticsearch.yml",
+        "readOnly": false
+      }
+    ],
+    "volumesFrom": null,
+    "hostname": null,
+    "user": null,
+    "workingDirectory": null,
+    "extraHosts": null,
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "ec2-ecs-es",
+        "awslogs-region": "${region}",
+        "awslogs-stream-prefix": "ec2-es-log-stream"
+      }
+    },
+    "ulimits": [
+      {
+        "name": "nofile",
+        "softLimit": 65536,
+        "hardLimit": 65536
+      }
+    ],
+    "dockerLabels": null,
+    "dependsOn": null,
+    "repositoryCredentials": null
+  }
+]
