@@ -1,0 +1,105 @@
+---
+- name: Include role "docker-swarm-common"
+  include_role:
+    name: docker-swarm-common
+
+- name: Create etc source dir for volume mounts if needed
+  file:
+    path: "{{ elasticsearch_etc_dir }}/{{ item.name}}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0775
+  with_items:
+    - "{{ elasticsearch_instances }}"
+
+- name: Create data source dir for volume mounts if needed
+  file:
+    path: "{{ elasticsearch_data_dir }}/{{ item.name}}"
+    state: directory
+    owner: 1000
+    group: root
+    mode: 0775
+  with_items:
+    - "{{ elasticsearch_instances }}"
+
+- name: "Create elasticsearch.yml"
+  copy:
+    content: "{{ item.params }}"
+    dest: "{{ elasticsearch_etc_dir }}/{{ item.name }}/elasticsearch.yml"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - "{{ elasticsearch_instances }}"
+
+- name: "Create jvm.options"
+  copy:
+    content: "{{ item.jvm_options }}"
+    dest: "{{ elasticsearch_etc_dir }}/{{ item.name }}/jvm.options"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - "{{ elasticsearch_instances }}"
+
+- name: "Create log4j2.properties"
+  copy:
+    content: "{{ item.log4j2_properties }}"
+    dest: "{{ elasticsearch_etc_dir }}/{{ item.name }}/log4j2.properties"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - "{{ elasticsearch_instances }}"
+
+- name: set vm.max_map_count to 262144 in sysctl
+  sysctl: name={{ item.key }} value={{ item.value }}
+  with_items:
+    - { key: "vm.max_map_count", value: "262144" }
+
+- name: Pull elasticsearch docker image
+  docker_image:
+    name: "{{ elasticsearch_docker_image }}"
+    source: pull
+    force_source: yes
+    state: present
+
+- name: Set elasticsearch "{{ item.name }}" state to present
+  docker_swarm_service:
+    name: "{{ item.name }}"
+    hostname: "{{ item.name }}"
+    placement:
+      constraints:
+        - node.labels.{{ item.name }} == enabled
+    image: "{{ elasticsearch_docker_image }}"
+    state: present
+    mounts:
+      - source: "{{ elasticsearch_etc_dir }}/{{ item.name }}/elasticsearch.yml"
+        target: "/usr/share/elasticsearch/config/elasticsearch.yml"
+        type: bind
+        readonly: yes
+      - source: "{{ elasticsearch_data_dir }}/{{ item.name }}"
+        target: "/usr/share/elasticsearch/data"
+        type: bind
+        readonly: no
+    update_config:
+      failure_action: rollback
+      parallelism: 1
+      delay: 60s
+      order: stop-first
+    rollback_config:
+      parallelism: 1
+      delay: 60s
+      order: stop-first
+    endpoint_mode: vip
+    publish: "{{ elasticsearch_publish_ports }}"
+    env: "{{ item.environment }}"
+    networks: "{{ elasticsearch_docker_attach_networks }}"
+    mode: global
+    hosts: "{{ item.hosts }}"
+#    reservations:
+#      cpus: xxx
+#      memory: xxx
+  when: inventory_hostname == docker_swarm__run_manager
+  with_items: "{{ elasticsearch_instances }}"

@@ -1,0 +1,33 @@
+---
+- name: setup pre-requisites
+  hosts: "{{ variable_host | default('[]') }}"
+  become: yes
+  roles:
+    - install-modules
+
+- name: install docker
+  hosts: "{{ variable_host | default('[]') }}"
+  become: yes
+  roles:
+    - role: docker-installation
+
+- name: set hostnames
+  hosts: "{{ variable_host | default('[]') }}"
+  become: yes
+  roles:
+    - role: set-hostnames
+
+- name: Initialize docker swarm
+  hosts: "{{ variable_host | default('[]') }}"
+  roles:
+    - role: docker-swarm
+      tags: docker_swarm
+      # Skip all docker_swarm tasks if we are not deploying to all Swarm cluster nodes
+      when: >
+        groups[docker_swarm_group] | difference(ansible_play_batch) | length == 0
+
+- name: Deploy elasticsearch in docker
+  hosts: "{{ variable_host | default('[]') }}"
+  become: yes
+  roles:
+    - role: elasticsearch-docker

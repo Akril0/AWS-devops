@@ -1,0 +1,55 @@
+elasticsearch_docker_image: "docker.elastic.co/elasticsearch/elasticsearch:7.17.5"
+
+elasticsearch_docker_attach_networks:
+  - host
+
+elasticsearch_http_port: change_me
+
+elasticsearch_etc_dir: "{{ data_docker_volume_dir_prefix }}/elasticsearch/etc"
+elasticsearch_data_dir: "{{ data_docker_volume_dir_prefix }}/elasticsearch/data"
+
+elasticsearch_common_config_params: |
+  content_change_me
+
+elasticsearch_publish_ports: change_me
+
+elasticsearch_common_jvm_options_content: |
+  -XX:+UseConcMarkSweepGC
+  -XX:CMSInitiatingOccupancyFraction=75
+  -XX:+UseCMSInitiatingOccupancyOnly
+  -XX:+AlwaysPreTouch
+  -server
+  -Xss1m
+  -Djava.awt.headless=true
+  -Dfile.encoding=UTF-8
+  -Djna.nosys=true
+  -Djdk.io.permissionsUseCanonicalPath=true
+  -Dio.netty.noUnsafe=true
+  -Dio.netty.noKeySetOptimization=true
+  -Dio.netty.recycler.maxCapacityPerThread=0
+  -Dlog4j.shutdownHookEnabled=false
+  -Dlog4j2.disable.jmx=true
+  -Dlog4j.skipJansi=true
+  -XX:+HeapDumpOnOutOfMemoryError
+  -Dlog4j2.formatMsgNoLookups=true
+
+elasticsearch_common_log4j2_properties_content: |
+  status = error
+  appender.console.type = Console
+  appender.console.name = console
+  appender.console.layout.type = PatternLayout
+  appender.console.layout.pattern = [%d{ISO8601}][%-5p][%-25c{1.}] %marker%m%n
+  rootLogger.level = info
+  rootLogger.appenderRef.console.ref = console
+
+elasticsearch_common_environment:
+  - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+elasticsearch_instances:
+  - name: elasticsearch
+    http_port: "{{ elasticsearch_http_port }}"
+    params: "{{ elasticsearch_common_config_params }}"
+    environment: "{{ elasticsearch_common_environment }}"
+    jvm_options: "{{ elasticsearch_common_jvm_options_content }}"
+    log4j2_properties: "{{ elasticsearch_common_log4j2_properties_content }}"
+    hosts: {}
