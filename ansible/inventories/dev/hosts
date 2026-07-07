@@ -1,0 +1,18 @@
+[dev]
+udemy-dev-app-a ansible_ssh_user=ubuntu
+udemy-dev-app-b ansible_ssh_user=ubuntu
+udemy-dev-app-c ansible_ssh_user=ubuntu
+
+[dev:vars]
+ansible_python_interpreter=/usr/bin/python3
+
+[managers]
+udemy-dev-app-a
+udemy-dev-app-b
+udemy-dev-app-c
+
+[workers]
+
+[swarm:children]
+managers
+workers

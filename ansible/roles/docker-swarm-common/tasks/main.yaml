@@ -1,0 +1,24 @@
+---
+- name: Check cluster membership
+  shell: docker info --format '{% raw %}{{ .Swarm.LocalNodeState }}{% endraw %}'
+  changed_when: false
+  become: yes
+  register: docker_swarm__check_membership_result
+  check_mode: no
+
+- set_fact:
+    docker_swarm__nodes_membership_active: "{{ hostvars | swarm_nodes_membership }}"
+  check_mode: no
+
+- name: Check which nodes are managers
+  shell: docker info --format '{% raw %}{{ .Swarm.ControlAvailable }}{% endraw %}'
+  become: yes
+  changed_when: false
+  register: docker_swarm__check_manager_result
+  check_mode: no
+
+- set_fact:
+    docker_swarm__nodes_managership: "{{ hostvars | swarm_nodes_managership }}"
+    docker_swarm__run_manager: "{{ (hostvars | swarm_nodes_managership)[0] }}"
+    docker_swarm__absent_nodes: "{{ hostvars | swarm_nodes_remove(docker_swarm__run_manager, docker_swarm_nodes) }}"
+  check_mode: no
