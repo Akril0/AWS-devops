@@ -1,0 +1,69 @@
+---
+- name: Install Docker Dependencies
+  apt: name={{ item }} state=latest update_cache=yes
+  with_items:
+    - ca-certificates
+    - software-properties-common
+  tags: docker
+
+- name: Get Docker key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+  tags: docker
+
+- name: Add Docker packages to Repository
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename|lower }} stable
+  tags: docker
+
+- name: Create systemd override directory
+  file:
+    path: /etc/systemd/system/docker.service.d/
+    state: directory
+
+- name: Create systemd override directory
+  file:
+    path: /etc/systemd/system/containerd.service.d/
+    state: directory
+
+- name: Add systemd override
+  copy:
+    content: "{{ docker_installation_systemd_docker_service_override }}"
+    dest: /etc/systemd/system/docker.service.d/override.conf
+
+- name: Add containerd override
+  copy:
+    src: override_containerd.conf
+    dest: /etc/systemd/system/containerd.service.d/override.conf
+
+- name: Install Docker-CE
+  apt: name="docker-ce" state=latest update_cache=yes
+  tags: docker
+
+- name: Create daemon.json with log roration feature enabled
+  copy:
+    content: "{{ docker_installation_daemon_json_content }}"
+    dest: /etc/docker/daemon.json
+
+- name: Create docker group
+  group:
+    name: docker
+    state: present
+  become: yes
+
+- name: Add user to the docker group
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: yes
+  with_items: "{{ non_root_docker_users }}"
+  become: yes
+  when: non_root_docker_users is defined
+
+
+- name: Ensure docker is started
+  service:
+    name: docker
+    state: started
+    enabled: yes

@@ -1,0 +1,64 @@
+---
+network_host_address_1: "172.27.72.50"
+network_host_address_2: "172.27.72.100"
+network_host_address_3: "172.27.72.150"
+
+physical_ip: "{{ ansible_eth0.ipv4.address }}"
+docker0_local_ip: "172.17.0.1"
+
+non_root_docker_users: ubuntu
+docker_swarm_node_iface: ens5
+docker_swarm_nodes:
+  udemy-dev-app-a:
+    iface: "{{ docker_swarm_node_iface }}"
+    labels:
+      elasticsearch-1: enabled
+  udemy-dev-app-b:
+    iface: "{{ docker_swarm_node_iface }}"
+    labels:
+      elasticsearch-2: enabled
+  udemy-dev-app-c:
+    iface: "{{ docker_swarm_node_iface }}"
+    labels:
+      elasticsearch-3: enabled
+
+data_docker_volume_dir_prefix: "/data"
+
+elasticsearch_docker_image: "docker.elastic.co/elasticsearch/elasticsearch:7.17.5"
+elasticsearch_docker_attach_networks:
+  - host
+elasticsearch_http_port: 9200
+elasticsearch_publish_ports:
+elasticsearch_common_environment:
+  - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+elasticsearch_common_config_params: |
+  cluster.name: elasticsearch
+  cluster.initial_master_nodes: elasticsearch-1,elasticsearch-2,elasticsearch-3
+  bootstrap.memory_lock: true
+  network.host: ["_{{ docker_swarm_node_iface }}_"]
+  discovery.seed_hosts:
+    - {{ network_host_address_1 }}
+    - {{ network_host_address_2 }}
+    - {{ network_host_address_3 }}
+elasticsearch_instances:
+  - name: elasticsearch-1
+    http_port: "{{ elasticsearch_http_port }}"
+    params: "{{ elasticsearch_common_config_params }}"
+    environment: "{{ elasticsearch_common_environment }}"
+    jvm_options: "{{ elasticsearch_common_jvm_options_content }}"
+    log4j2_properties: "{{ elasticsearch_common_log4j2_properties_content }}"
+    hosts: {}
+  - name: elasticsearch-2
+    http_port: "{{ elasticsearch_http_port }}"
+    params: "{{ elasticsearch_common_config_params }}"
+    environment: "{{ elasticsearch_common_environment }}"
+    jvm_options: "{{ elasticsearch_common_jvm_options_content }}"
+    log4j2_properties: "{{ elasticsearch_common_log4j2_properties_content }}"
+    hosts: {}
+  - name: elasticsearch-3
+    http_port: "{{ elasticsearch_http_port }}"
+    params: "{{ elasticsearch_common_config_params }}"
+    environment: "{{ elasticsearch_common_environment }}"
+    jvm_options: "{{ elasticsearch_common_jvm_options_content }}"
+    log4j2_properties: "{{ elasticsearch_common_log4j2_properties_content }}"
+    hosts: {}

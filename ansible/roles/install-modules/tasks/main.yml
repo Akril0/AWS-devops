@@ -1,0 +1,11 @@
+---
+- name: Install Packages
+  apt: name={{ item }} state=latest update_cache=yes
+  with_items:
+    - python-dev
+    - curl
+    - python3-pip
+    - python-setuptools
+
+- name: Install docker package from pip
+  raw:  pip install docker-compose && pip install wheel

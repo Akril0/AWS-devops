@@ -1,0 +1,17 @@
+docker_installation_systemd_docker_service_override: |
+  [Unit]
+  Description=Docker Application Container Engine
+  Documentation=https://docs.docker.com
+  BindsTo=containerd.service
+  After=network-online.target firewalld.service iptables-restore.service containerd.service
+  Wants=network-online.target
+  Requires=docker.socket
+
+docker_installation_daemon_json_content: |
+  {
+    "log-driver": "json-file",
+    "log-opts": {
+      "max-size": "100M",
+      "max-file": "3"
+    }
+  }
